@@ -9,3 +9,6 @@ build/
 cmake-build-*/
 *.o
 *.obj
+
+data/
+artifacts/
