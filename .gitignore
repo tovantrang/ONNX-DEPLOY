@@ -4,11 +4,6 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 
-# c++
-build/
-cmake-build-*/
-*.o
-*.obj
-
-data/
+# data and artifacts
+/data/
 artifacts/
