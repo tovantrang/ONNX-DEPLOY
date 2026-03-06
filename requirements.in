@@ -1,0 +1,19 @@
+# --- Core ---
+numpy
+scipy
+pyyaml
+tqdm
+
+# --- PyTorch ---
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch
+torchvision
+
+# --- ONNX ---
+onnx
+onnxscript
+onnxruntime-gpu
+
+# --- Benchmark / utils ---
+pandas
+matplotlib
