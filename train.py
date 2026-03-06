@@ -1,3 +1,4 @@
+import argparse
 import random
 
 import numpy as np
@@ -5,6 +6,8 @@ import torch
 import torch.nn as nn
 
 from src.data.dataloader import generate_dataloaders
+from src.export.eager import load_model_eager
+from src.export.eager import save_model_eager
 from src.export.onnx import export_onnx
 from src.export.onnx import export_sanity_forward
 from src.export.onnx import verify_onnxruntime
@@ -26,29 +29,41 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--command", default="train", choices=["train", "no_train"])
+args = parser.parse_args()
+
+
 def main():
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
     train_dl, val_dl, test_dl = generate_dataloaders(batch_size=64)
 
-    model = TinyCNN().to(device)
-    opt = torch.optim.Adam(model.parameters(), lr=1e-3)
-    criterion = nn.CrossEntropyLoss()
+    if args.command == "train":
+        model = TinyCNN().to(device)
+        opt = torch.optim.Adam(model.parameters(), lr=1e-3)
+        criterion = nn.CrossEntropyLoss()
 
-    for epoch in range(num_epochs):
-        print(f"Epoch {epoch + 1}/{num_epochs}")
-        train(model, train_dl, opt, criterion, device)
-        evaluate(model, val_dl, criterion, device)
+        for epoch in range(num_epochs):
+            print(f"Epoch {epoch + 1}/{num_epochs}")
+            train(model, train_dl, opt, criterion, device)
+            evaluate(model, val_dl, criterion, device)
 
-    evaluate(model, test_dl, criterion, device, name="Test")
+        evaluate(model, test_dl, criterion, device, name="Test")
 
-    print("Training and evaluation complete.")
+        print("Training and evaluation complete.")
 
-    export_sanity_forward(model, device)
+        save_model_eager(model)
 
-    export_onnx(model, device)
+    model_eager = TinyCNN().to(device)
+    load_model_eager(model_eager, device=device)
 
-    verify_onnxruntime(model, device)
+    export_sanity_forward(model_eager, device)
+
+    export_onnx(model_eager, device)
+
+    verify_onnxruntime(model_eager, device)
 
 
 if __name__ == "__main__":
