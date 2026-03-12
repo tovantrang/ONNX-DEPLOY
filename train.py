@@ -4,6 +4,7 @@ import sys
 import torch
 import torch.nn as nn
 
+from src.benchmark.latency import benchmark_runner
 from src.data.dataloader import generate_dataloaders
 from src.export.eager import load_model_eager
 from src.export.eager import save_model_eager
@@ -11,6 +12,8 @@ from src.export.onnx import export_onnx
 from src.export.onnx import export_sanity_forward
 from src.export.onnx import verify_onnxruntime
 from src.models.tinycnn import TinyCNN
+from src.runtimes.runner import ONNXRunner
+from src.runtimes.runner import PyTorchRunner
 from src.training.training_loop import evaluate
 from src.training.training_loop import train
 from src.utils.config import load_config
@@ -23,7 +26,7 @@ def parse_args(argv):
     parser.add_argument(
         "command",
         default="benchmark",
-        choices=["train", "export", "benchmark"],
+        choices=["train", "export", "benchmark", "latency"],
         nargs="?",
         help="Command to run: 'train' to train the model, 'export' to export, 'benchmark' to start benchmarking",
     )
@@ -72,6 +75,23 @@ def main(args):
         load_model_eager(model_eager, path=C["export"]["pt_path"], device=device)
 
         verify_onnxruntime(model_eager, device, onnx_path=C["export"]["onnx_path"])
+
+    elif args.command == "latency":
+        model_eager = TinyCNN().to(device)
+        _, _, test_dl = generate_dataloaders(
+            C, batch_size=1
+        )  # use batch size 1 for latency benchmarking
+        load_model_eager(model_eager, path=C["export"]["pt_path"], device=device)
+        eager_runner = PyTorchRunner(model_eager, device)
+        onnx_runner = ONNXRunner(
+            C["export"]["onnx_path"], providers=["CUDAExecutionProvider"]
+        )
+
+        eager_stats = benchmark_runner(eager_runner, test_dl, device)
+        onnx_stats = benchmark_runner(onnx_runner, test_dl, device)
+        print(
+            f"Latency (ms) - PyTorch Eager: {eager_stats['mean_latency_ms']:.2f}, ONNXRuntime: {onnx_stats['mean_latency_ms']:.2f}"
+        )
 
 
 if __name__ == "__main__":

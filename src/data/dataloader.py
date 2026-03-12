@@ -4,8 +4,11 @@ from torchvision import datasets
 from torchvision import transforms
 
 
-def generate_dataloaders(C):
-    full_dataset_train = datasets.CIFAR10(root="./data", train=True, download=True)
+def generate_dataloaders(C, data_dir=None, batch_size=None):
+    data_dir = data_dir if data_dir is not None else C["paths"]["data"]
+    batch_size = batch_size if batch_size is not None else C["training"]["batch_size"]
+
+    full_dataset_train = datasets.CIFAR10(root=data_dir, train=True, download=True)
     train_ds, val_ds = torch.utils.data.random_split(full_dataset_train, [0.8, 0.2])
     imgs = train_ds.dataset.data[train_ds.indices]
     mean = imgs.mean(axis=(0, 1, 2)) / 255.0
@@ -20,16 +23,10 @@ def generate_dataloaders(C):
     train_ds.dataset.transform = transform
     val_ds.dataset.transform = transform
 
-    train_dl = DataLoader(
-        train_ds, batch_size=C["training"]["batch_size"], shuffle=True, num_workers=0
-    )
-    val_dl = DataLoader(
-        val_ds, batch_size=C["training"]["batch_size"], shuffle=False, num_workers=0
-    )
+    train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=0)
+    val_dl = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=0)
     test_ds = datasets.CIFAR10(
-        root="./data", train=False, download=True, transform=transform
+        root=data_dir, train=False, download=True, transform=transform
     )
-    test_dl = DataLoader(
-        test_ds, batch_size=C["training"]["batch_size"], shuffle=False, num_workers=0
-    )
+    test_dl = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=0)
     return train_dl, val_dl, test_dl
