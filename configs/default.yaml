@@ -1,0 +1,11 @@
+seed: 42
+
+training:
+    epochs: 1
+    batch_size: 64
+    lr: 0.001
+
+paths:
+    data: ./data
+    model: ./artifacts/tinycnn_cifar10.pt
+    onnx: ./artifacts/tinycnn_cifar10.onnx
