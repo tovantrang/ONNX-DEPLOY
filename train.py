@@ -57,21 +57,21 @@ def main(args):
 
         print("Training and evaluation complete.")
 
-        save_model_eager(model)
+        save_model_eager(model, C["export"]["pt_path"])
 
     elif args.command == "export":
         model_eager = TinyCNN().to(device)
-        load_model_eager(model_eager, device=device)
+        load_model_eager(model_eager, path=C["export"]["pt_path"], device=device)
 
         export_sanity_forward(model_eager, device)
 
-        export_onnx(model_eager, device)
+        export_onnx(model_eager, device, out_path=C["export"]["onnx_path"])
 
     elif args.command == "benchmark":
         model_eager = TinyCNN().to(device)
-        load_model_eager(model_eager, device=device)
+        load_model_eager(model_eager, path=C["export"]["pt_path"], device=device)
 
-        verify_onnxruntime(model_eager, device)
+        verify_onnxruntime(model_eager, device, onnx_path=C["export"]["onnx_path"])
 
 
 if __name__ == "__main__":

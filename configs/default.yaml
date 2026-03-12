@@ -7,5 +7,6 @@ training:
 
 paths:
     data: ./data
-    model: ./artifacts/tinycnn_cifar10.pt
-    onnx: ./artifacts/tinycnn_cifar10.onnx
+export:
+    pt_path: ./artifacts/tinycnn_cifar10.pt
+    onnx_path: ./artifacts/tinycnn_cifar10.onnx
