@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 .pytest_cache/
 .mypy_cache/
+.vscode/
 
 # data and artifacts
 /data/
