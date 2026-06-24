@@ -4,6 +4,8 @@ import numpy as np
 import onnxruntime as ort
 import torch
 
+from src.runtimes.runner import resolve_onnx_providers
+
 
 def export_sanity_forward(model, device):
     model.eval()
@@ -38,7 +40,12 @@ def export_onnx(model, device, out_path="./artifacts/tinycnn_cifar10.onnx"):
     assert out_path.exists(), "ONNX export failed: file not found"
 
 
-def verify_onnxruntime(model, device, onnx_path="./artifacts/tinycnn_cifar10.onnx"):
+def verify_onnxruntime(
+    model,
+    device,
+    onnx_path="./artifacts/tinycnn_cifar10.onnx",
+    providers=None,
+):
     """
     Minimal ONNXRuntime check: PyTorch logits vs ONNXRuntime logits on the same input.
     TODO later: test with a real CIFAR batch (not just zeros).
@@ -50,10 +57,9 @@ def verify_onnxruntime(model, device, onnx_path="./artifacts/tinycnn_cifar10.onn
     with torch.no_grad():
         pt_logits = model(x).cpu().numpy()
 
-    sess = ort.InferenceSession(
-        onnx_path,
-        providers=["CUDAExecutionProvider"],  # keep it simple for now
-    )
+    providers, _ = resolve_onnx_providers(providers)
+    sess = ort.InferenceSession(onnx_path, providers=providers)
+    print("ONNX Runtime session providers:", sess.get_providers())
     ort_out = sess.run(["logits"], {"input": x.cpu().numpy()})[0]
 
     max_abs_diff = float(np.max(np.abs(pt_logits - ort_out)))

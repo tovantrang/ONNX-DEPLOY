@@ -43,6 +43,7 @@ def main(args):
     C = load_config(args.config)
     set_seed(C["seed"])
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    onnx_providers = C.get("onnx", {}).get("providers")
 
     train_dl, val_dl, test_dl = generate_dataloaders(C)
 
@@ -74,7 +75,12 @@ def main(args):
         model_eager = TinyCNN().to(device)
         load_model_eager(model_eager, path=C["export"]["pt_path"], device=device)
 
-        verify_onnxruntime(model_eager, device, onnx_path=C["export"]["onnx_path"])
+        verify_onnxruntime(
+            model_eager,
+            device,
+            onnx_path=C["export"]["onnx_path"],
+            providers=onnx_providers,
+        )
 
     elif args.command == "latency":
         model_eager = TinyCNN().to(device)
@@ -83,9 +89,7 @@ def main(args):
         )  # use batch size 1 for latency benchmarking
         load_model_eager(model_eager, path=C["export"]["pt_path"], device=device)
         eager_runner = PyTorchRunner(model_eager, device)
-        onnx_runner = ONNXRunner(
-            C["export"]["onnx_path"], providers=["CUDAExecutionProvider"]
-        )
+        onnx_runner = ONNXRunner(C["export"]["onnx_path"], providers=onnx_providers)
 
         eager_stats = benchmark_runner(eager_runner, test_dl, device)
         onnx_stats = benchmark_runner(onnx_runner, test_dl, device)

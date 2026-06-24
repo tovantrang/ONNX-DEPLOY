@@ -10,3 +10,11 @@ paths:
 export:
     pt_path: ./artifacts/tinycnn_cifar10.pt
     onnx_path: ./artifacts/tinycnn_cifar10.onnx
+
+onnx:
+    providers:
+        - CPUExecutionProvider
+    # For CUDA-enabled machines, prefer CUDA with CPU fallback:
+    # providers:
+    #     - CUDAExecutionProvider
+    #     - CPUExecutionProvider
