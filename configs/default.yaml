@@ -1,5 +1,8 @@
 seed: 42
 
+logging:
+    level: INFO
+
 training:
     epochs: 1
     batch_size: 64

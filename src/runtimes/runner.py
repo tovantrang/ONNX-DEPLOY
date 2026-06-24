@@ -1,4 +1,9 @@
+import logging
+
 import torch
+
+
+logger = logging.getLogger(__name__)
 
 
 def resolve_onnx_providers(requested_providers=None):
@@ -26,27 +31,16 @@ def resolve_onnx_providers(requested_providers=None):
         )
 
     if missing_providers:
-        print(
-            "ONNX Runtime provider fallback:",
-            "requested",
+        logger.warning(
+            "ONNX Runtime provider fallback: requested=%s missing=%s using=%s",
             requested_providers,
-            "missing",
             missing_providers,
-            "using",
             providers,
-            "available",
-            available_providers,
         )
-    else:
-        print(
-            "ONNX Runtime providers:",
-            "requested",
-            requested_providers,
-            "using",
-            providers,
-            "available",
-            available_providers,
-        )
+
+    logger.info("ONNX Runtime providers requested: %s", requested_providers)
+    logger.info("ONNX Runtime providers available: %s", available_providers)
+    logger.info("ONNX Runtime providers used: %s", providers)
 
     return providers, available_providers
 
@@ -84,7 +78,7 @@ class ONNXRunner(Runner):
         providers, _ = resolve_onnx_providers(providers)
         self.session = ort.InferenceSession(onnx_path, providers=providers)
         self.name = "onnxruntime"
-        print("ONNX Runtime session providers:", self.session.get_providers())
+        logger.info("ONNX Runtime session providers: %s", self.session.get_providers())
 
     def prepare(self, x):
         return x.cpu().numpy()

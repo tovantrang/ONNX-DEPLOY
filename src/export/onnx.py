@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import numpy as np
@@ -7,12 +8,19 @@ import torch
 from src.runtimes.runner import resolve_onnx_providers
 
 
+logger = logging.getLogger(__name__)
+
+
 def export_sanity_forward(model, device):
     model.eval()
     x = torch.zeros(1, 3, 32, 32, device=device)
     with torch.no_grad():
         y = model(x)
-    print(f"SANITY forward: in {tuple(x.shape)}, out {tuple(y.shape)}")
+    logger.info(
+        "Export sanity forward: input=%s output=%s",
+        tuple(x.shape),
+        tuple(y.shape),
+    )
     assert y.shape == (1, 10), f"Unexpected output shape: {tuple(y.shape)}"
 
 
@@ -36,7 +44,7 @@ def export_onnx(model, device, out_path="./artifacts/tinycnn_cifar10.onnx"):
         input_names=["input"],
         output_names=["logits"],
     )
-    print(f"Exported ONNX to: {out_path.resolve()}")
+    logger.info("Exported ONNX model to %s", out_path)
     assert out_path.exists(), "ONNX export failed: file not found"
 
 
@@ -59,19 +67,16 @@ def verify_onnxruntime(
 
     providers, _ = resolve_onnx_providers(providers)
     sess = ort.InferenceSession(onnx_path, providers=providers)
-    print("ONNX Runtime session providers:", sess.get_providers())
+    logger.info("ONNX Runtime session providers: %s", sess.get_providers())
     ort_out = sess.run(["logits"], {"input": x.cpu().numpy()})[0]
 
     max_abs_diff = float(np.max(np.abs(pt_logits - ort_out)))
-    print(
-        "ONNXRuntime verify:",
-        "pt",
+    logger.info(
+        "Correctness shapes: pytorch=%s onnxruntime=%s",
         pt_logits.shape,
-        "ort",
         ort_out.shape,
-        "max_abs_diff",
-        max_abs_diff,
     )
+    logger.info("Correctness max_abs_diff: %.8g", max_abs_diff)
 
     assert (
         ort_out.shape == pt_logits.shape

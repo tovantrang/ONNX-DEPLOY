@@ -1,4 +1,5 @@
 import argparse
+import logging
 import sys
 
 import torch
@@ -17,7 +18,11 @@ from src.runtimes.runner import PyTorchRunner
 from src.training.training_loop import evaluate
 from src.training.training_loop import train
 from src.utils.config import load_config
+from src.utils.logging import setup_logging
 from src.utils.seed import set_seed
+
+
+logger = logging.getLogger(__name__)
 
 
 def parse_args(argv):
@@ -41,6 +46,7 @@ def parse_args(argv):
 
 def main(args):
     C = load_config(args.config)
+    setup_logging(C.get("logging", {}).get("level", "INFO"))
     set_seed(C["seed"])
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     onnx_providers = C.get("onnx", {}).get("providers")
@@ -93,8 +99,13 @@ def main(args):
 
         eager_stats = benchmark_runner(eager_runner, test_dl, device)
         onnx_stats = benchmark_runner(onnx_runner, test_dl, device)
-        print(
-            f"Latency (ms) - PyTorch Eager: {eager_stats['mean_latency_ms']:.2f}, ONNXRuntime: {onnx_stats['mean_latency_ms']:.2f}"
+        logger.info(
+            "Latency PyTorch eager: %.2f ms",
+            eager_stats["mean_latency_ms"],
+        )
+        logger.info(
+            "Latency ONNX Runtime: %.2f ms",
+            onnx_stats["mean_latency_ms"],
         )
 
 
