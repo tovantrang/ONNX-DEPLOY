@@ -1,0 +1,13 @@
+# Optional GPU runtime dependencies.
+# Do not install together with requirements-cpu.txt.
+
+--extra-index-url https://download.pytorch.org/whl/cu121
+
+numpy
+onnx
+onnxruntime-gpu
+onnxscript
+pyyaml
+torch==2.10.0
+torchvision==0.25.0
+tqdm

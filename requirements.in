@@ -1,20 +1,4 @@
-# --- Core ---
-numpy
-scipy
-pyyaml
-tqdm
-pyyaml
+# Backward-compatible default requirements input.
+# The project is CPU-first by default; use requirements-gpu.in for CUDA.
 
-# --- PyTorch ---
---extra-index-url https://download.pytorch.org/whl/cu121
-torch
-torchvision
-
-# --- ONNX ---
-onnx
-onnxscript
-onnxruntime-gpu
-
-# --- Benchmark / utils ---
-pandas
-matplotlib
+-r requirements-cpu.in

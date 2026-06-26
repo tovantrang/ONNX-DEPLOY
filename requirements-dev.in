@@ -1,0 +1,8 @@
+# Development tooling only.
+
+pip-tools
+pre-commit
+pytest
+ruff
+mypy
+types-PyYAML

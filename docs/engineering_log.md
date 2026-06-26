@@ -29,6 +29,25 @@ performance.
 Validation: ONNX export, correctness benchmark, and latency benchmark run with
 the CPU provider.
 
+### D002 — Separate CPU and GPU dependency sets
+
+Decision: keep CPU and GPU dependency sets separate.
+
+The default CPU installation uses `onnxruntime`. The optional GPU installation
+uses `onnxruntime-gpu` and should not be installed in the same environment as
+`onnxruntime`.
+
+Justification: separate dependency files improve portability and
+reproducibility, avoid forcing CUDA on machines without a GPU, and make the
+runtime target explicit.
+
+Limit: users must choose the dependency file that matches their machine and
+deployment target.
+
+Conceptual link: requirements files define what is installed in the Python
+environment, while the YAML configuration defines which ONNX Runtime providers
+are requested at execution time.
+
 ## Roadmap
 
 ### MVP
@@ -54,7 +73,7 @@ small usability improvements for demos.
 ## Tickets
 
 - T001 — Configurable ONNX Runtime providers — Done
-- T002 — Dependency split CPU/GPU — Planned
+- T002 — Dependency split CPU/GPU — Done
 - T003 — Real evaluation metrics and JSON outputs — Planned
 - T004 — Correctness check on real batch — Planned
 - T005 — Basic tests — Planned
