@@ -5,9 +5,9 @@
 
 numpy
 onnx
-onnxruntime-gpu
+onnxruntime-gpu==1.24.2
 onnxscript
 pyyaml
-torch==2.10.0
-torchvision==0.25.0
+torch==2.5.1+cu121
+torchvision==0.20.1+cu121
 tqdm
