@@ -7,7 +7,6 @@ import torch
 
 from src.runtimes.runner import resolve_onnx_providers
 
-
 logger = logging.getLogger(__name__)
 
 

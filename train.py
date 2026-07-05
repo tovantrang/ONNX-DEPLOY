@@ -7,20 +7,14 @@ import torch.nn as nn
 
 from src.benchmark.latency import measure_runner_latency
 from src.data.dataloader import generate_dataloaders
-from src.export.eager import load_model_eager
-from src.export.eager import save_model_eager
-from src.export.onnx import export_onnx
-from src.export.onnx import export_sanity_forward
-from src.export.onnx import verify_onnxruntime
+from src.export.eager import load_model_eager, save_model_eager
+from src.export.onnx import export_onnx, export_sanity_forward, verify_onnxruntime
 from src.models.tinycnn import TinyCNN
-from src.runtimes.runner import ONNXRunner
-from src.runtimes.runner import PyTorchRunner
-from src.training.training_loop import evaluate
-from src.training.training_loop import train
+from src.runtimes.runner import ONNXRunner, PyTorchRunner
+from src.training.training_loop import evaluate, train
 from src.utils.config import load_config
 from src.utils.logging import setup_logging
 from src.utils.seed import set_seed
-
 
 logger = logging.getLogger(__name__)
 

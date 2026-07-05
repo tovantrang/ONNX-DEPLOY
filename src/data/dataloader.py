@@ -1,7 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
-from torchvision import datasets
-from torchvision import transforms
+from torchvision import datasets, transforms
 
 
 def generate_dataloaders(C, data_dir=None, batch_size=None):

@@ -63,6 +63,19 @@ benchmark.
 Future option: reintroduce `benchmark` later for a real benchmark suite with
 clear metrics, outputs, and methodology.
 
+### D004 — Minimal pyproject for tool configuration
+
+Decision: add a minimal `pyproject.toml` for tool configuration only.
+
+`pyproject.toml` centralizes Ruff, pytest, and mypy settings. Runtime
+dependencies remain in the requirements files for now.
+
+Justification: this avoids duplicate dependency sources while standardizing
+tool configuration in a conventional Python location.
+
+Future option: move toward editable package installation later if the project
+needs package metadata, console scripts, or a fuller packaging workflow.
+
 ## Roadmap
 
 ### MVP
@@ -96,6 +109,7 @@ small usability improvements for demos.
 - T007 — Docker CPU image — Later
 - T008 — MLflow local tracking — Later
 - T009 — Rename correctness command from benchmark to verify — Done
+- T010 — Minimal pyproject for tool configuration — Done
 
 ## Known limitations
 
