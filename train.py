@@ -5,7 +5,7 @@ import sys
 import torch
 import torch.nn as nn
 
-from src.benchmark.latency import benchmark_runner
+from src.benchmark.latency import measure_runner_latency
 from src.data.dataloader import generate_dataloaders
 from src.export.eager import load_model_eager
 from src.export.eager import save_model_eager
@@ -30,10 +30,14 @@ def parse_args(argv):
 
     parser.add_argument(
         "command",
-        default="benchmark",
-        choices=["train", "export", "benchmark", "latency"],
+        default="verify",
+        choices=["train", "export", "verify", "latency"],
         nargs="?",
-        help="Command to run: 'train' to train the model, 'export' to export, 'benchmark' to start benchmarking",
+        help=(
+            "Command to run: 'train' to train the model, 'export' to export, "
+            "'verify' to compare PyTorch and ONNX Runtime outputs, "
+            "'latency' to measure inference latency"
+        ),
     )
     parser.add_argument(
         "--config",
@@ -77,7 +81,7 @@ def main(args):
 
         export_onnx(model_eager, device, out_path=C["export"]["onnx_path"])
 
-    elif args.command == "benchmark":
+    elif args.command == "verify":
         model_eager = TinyCNN().to(device)
         load_model_eager(model_eager, path=C["export"]["pt_path"], device=device)
 
@@ -92,13 +96,13 @@ def main(args):
         model_eager = TinyCNN().to(device)
         _, _, test_dl = generate_dataloaders(
             C, batch_size=1
-        )  # use batch size 1 for latency benchmarking
+        )  # use batch size 1 for latency measurement
         load_model_eager(model_eager, path=C["export"]["pt_path"], device=device)
         eager_runner = PyTorchRunner(model_eager, device)
         onnx_runner = ONNXRunner(C["export"]["onnx_path"], providers=onnx_providers)
 
-        eager_stats = benchmark_runner(eager_runner, test_dl, device)
-        onnx_stats = benchmark_runner(onnx_runner, test_dl, device)
+        eager_stats = measure_runner_latency(eager_runner, test_dl, device)
+        onnx_stats = measure_runner_latency(onnx_runner, test_dl, device)
         logger.info(
             "Latency PyTorch eager: %.2f ms",
             eager_stats["mean_latency_ms"],

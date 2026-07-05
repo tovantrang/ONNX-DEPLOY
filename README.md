@@ -3,14 +3,14 @@
 ## Overview
 
 ONNX-DEPLOY is a local ML/CV inference deployment pipeline. It trains a small
-PyTorch image classification model, exports it to ONNX, validates ONNX Runtime
-outputs against PyTorch, and benchmarks inference latency.
+PyTorch image classification model currently on CIFAR-10, exports it to ONNX, validates ONNX Runtime
+outputs against PyTorch, and measures inference latency.
 
 ## Why this project
 
 The goal is to understand the engineering path from a trained model to an
 inference artifact: PyTorch training, checkpointing, ONNX export, runtime
-selection, correctness checks, and reproducible latency measurements.
+selection, numerical consistency checks, and reproducible latency measurements.
 
 ## Current features
 
@@ -18,7 +18,7 @@ selection, correctness checks, and reproducible latency measurements.
 - ONNX export.
 - ONNX Runtime inference.
 - PyTorch vs ONNX Runtime correctness check.
-- Latency benchmark.
+- Basic latency measurement.
 - Configurable ONNX Runtime providers.
 - CPU-first setup.
 - Optional GPU requirements.
@@ -32,7 +32,7 @@ PyTorch model
     -> ONNX export
     -> ONNX Runtime session
     -> correctness check
-    -> latency benchmark
+    -> latency measurement
 ```
 
 ## Installation
@@ -132,13 +132,13 @@ Export the saved checkpoint to ONNX:
 python train.py export
 ```
 
-Compare PyTorch and ONNX Runtime outputs:
+Compare PyTorch and ONNX Runtime outputs for numerical consistency:
 
 ```bash
-python train.py benchmark
+python train.py verify
 ```
 
-Run the latency benchmark:
+Measure inference latency:
 
 ```bash
 python train.py latency
@@ -155,12 +155,12 @@ Example logs from a CPU run:
 ```
 
 Latency numbers depend heavily on hardware, installed runtimes, provider
-selection, and current system load. They should not be interpreted as universal
-benchmark results.
+selection, and current system load. The current latency command is a basic
+measurement utility, not a rigorous benchmark suite.
 
 ## Project structure
 
-- `src/`: Python package with model, data loading, export, runtime, benchmark,
+- `src/`: Python package with model, data loading, export, runtime, latency,
   training, and utility modules.
 - `configs/`: YAML configuration files.
 - `artifacts/`: generated checkpoints and ONNX files, ignored by Git.
@@ -179,7 +179,7 @@ benchmark results.
 
 ## Roadmap
 
-- Persist evaluation metrics and benchmark outputs to JSON.
+- Persist evaluation metrics and latency outputs to JSON.
 - Add correctness checks on real data batches.
 - Add automated tests.
 - Add a local FastAPI inference API.
@@ -190,7 +190,7 @@ benchmark results.
 ## Limitations
 
 - Not production-ready.
-- Latency benchmark is still basic.
+- Latency measurement is still basic.
 - No API yet.
 - No Docker image yet.
 - No automated tests yet.

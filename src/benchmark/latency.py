@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 
 
-def benchmark_runner(runner, dataloader, device, warmup=20, runs=100):
+def measure_runner_latency(runner, dataloader, device, warmup=20, runs=100):
     timings = []
     iterator = iter(dataloader)
     for _ in range(warmup):

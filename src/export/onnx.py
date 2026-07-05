@@ -59,6 +59,7 @@ def verify_onnxruntime(
     TODO later: test with a real CIFAR batch (not just zeros).
     """
 
+    logger.info("Verifying PyTorch vs ONNX Runtime output consistency")
     model.eval()
     x = torch.zeros(1, 3, 32, 32, device=device)
 

@@ -6,7 +6,7 @@ Transform the current ONNX inference prototype into a reproducible local ML/CV
 pipeline suitable for a professional portfolio.
 
 The project should cover model training, evaluation, ONNX export, runtime
-comparison between PyTorch and ONNX Runtime, latency benchmarking, a local
+comparison between PyTorch and ONNX Runtime, latency measurement, a local
 inference API, Docker packaging, automated tests, and a professional README.
 The scope should remain local, free, standard, and easy to explain.
 
@@ -23,10 +23,10 @@ Justification: CPU-first execution improves portability, reproducibility, and
 ease of setup on machines without a GPU. It also makes the default pipeline
 simpler to run during review or demonstration.
 
-Trade-off: CPU latency benchmarks are less representative of GPU deployment
+Trade-off: CPU latency measurements are less representative of GPU deployment
 performance.
 
-Validation: ONNX export, correctness benchmark, and latency benchmark run with
+Validation: ONNX export, correctness verification, and latency measurement run with
 the CPU provider.
 
 ### D002 — Separate CPU and GPU dependency sets
@@ -48,11 +48,26 @@ Conceptual link: requirements files define what is installed in the Python
 environment, while the YAML configuration defines which ONNX Runtime providers
 are requested at execution time.
 
+### D003 — Command names distinguish correctness from performance
+
+Decision: use `verify` for numerical consistency checks and `latency` for
+inference-time measurement.
+
+`verify` checks that PyTorch and ONNX Runtime produce numerically consistent
+outputs. `latency` measures inference time with the current lightweight timing
+utility. The `benchmark` command is intentionally removed for now.
+
+Justification: correctness validation should not be presented as a performance
+benchmark.
+
+Future option: reintroduce `benchmark` later for a real benchmark suite with
+clear metrics, outputs, and methodology.
+
 ## Roadmap
 
 ### MVP
 
-Keep the existing train, export, correctness, and latency commands working on
+Keep the existing train, export, verify, and latency commands working on
 CPU with clear configuration and documentation.
 
 ### Clean version
@@ -67,7 +82,7 @@ lightweight local experiment tracking.
 
 ### Optional extensions
 
-Add GitHub Actions, optional GPU documentation, richer benchmark reports, and
+Add GitHub Actions, optional GPU documentation, richer latency reports, and
 small usability improvements for demos.
 
 ## Tickets
@@ -80,12 +95,13 @@ small usability improvements for demos.
 - T006 — FastAPI inference API — Later
 - T007 — Docker CPU image — Later
 - T008 — MLflow local tracking — Later
+- T009 — Rename correctness command from benchmark to verify — Done
 
 ## Known limitations
 
 - No API yet.
 - No Docker image yet.
 - No automated tests yet.
-- Latency benchmark still basic.
+- Latency measurement still basic.
 - Export command still touches dataloaders.
 - Active Python environment must include project dependencies.
