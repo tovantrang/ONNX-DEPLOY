@@ -12,6 +12,9 @@ quote-style = "double"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "integration: tests that exercise ONNX export/runtime or filesystem artifacts",
+]
 
 [tool.mypy]
 python_version = "3.11"

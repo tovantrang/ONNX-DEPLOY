@@ -76,6 +76,18 @@ tool configuration in a conventional Python location.
 Future option: move toward editable package installation later if the project
 needs package metadata, console scripts, or a fuller packaging workflow.
 
+### D005 — Initial pytest coverage
+
+Decision: add a small pytest suite for project foundations.
+
+Unit tests cover config loading, TinyCNN forward shape, and ONNX Runtime
+provider resolution. The integration test covers a minimal PyTorch to ONNX to
+ONNX Runtime CPU correctness path.
+
+Constraints: tests use synthetic tensors, do not download CIFAR-10, do not
+write to the real `artifacts/` directory, do not require CUDA, and do not assert
+fixed latency thresholds.
+
 ## Roadmap
 
 ### MVP
@@ -110,6 +122,7 @@ small usability improvements for demos.
 - T008 — MLflow local tracking — Later
 - T009 — Rename correctness command from benchmark to verify — Done
 - T010 — Minimal pyproject for tool configuration — Done
+- T011 — Initial pytest suite — Done
 
 ## Known limitations
 
