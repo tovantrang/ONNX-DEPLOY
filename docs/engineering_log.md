@@ -88,6 +88,16 @@ Constraints: tests use synthetic tensors, do not download CIFAR-10, do not
 write to the real `artifacts/` directory, do not require CUDA, and do not assert
 fixed latency thresholds.
 
+### D006 — Persist verify results to JSON
+
+Decision: make `verify` return and persist structured numerical consistency
+results.
+
+The verify output contains difference metrics, tolerance, output shapes, ONNX
+Runtime provider information, input shape, dtype, device, and the ONNX path.
+These are correctness metrics for PyTorch vs ONNX Runtime output consistency,
+not model evaluation metrics on a dataset.
+
 ## Roadmap
 
 ### MVP
@@ -123,12 +133,12 @@ small usability improvements for demos.
 - T009 — Rename correctness command from benchmark to verify — Done
 - T010 — Minimal pyproject for tool configuration — Done
 - T011 — Initial pytest suite — Done
+- T012 — Persist verify results to JSON — Done
 
 ## Known limitations
 
 - No API yet.
 - No Docker image yet.
-- No automated tests yet.
+- Automated tests are still limited to foundation smoke tests.
 - Latency measurement still basic.
-- Export command still touches dataloaders.
 - Active Python environment must include project dependencies.

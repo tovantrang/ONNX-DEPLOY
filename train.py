@@ -48,10 +48,10 @@ def main(args):
     set_seed(C["seed"])
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     onnx_providers = C.get("onnx", {}).get("providers")
-
-    train_dl, val_dl, test_dl = generate_dataloaders(C)
+    verify_config = C.get("verify", {})
 
     if args.command == "train":
+        train_dl, val_dl, test_dl = generate_dataloaders(C)
         model = TinyCNN().to(device)
         opt = torch.optim.Adam(model.parameters(), lr=C["training"]["lr"])
         criterion = nn.CrossEntropyLoss()
@@ -84,6 +84,8 @@ def main(args):
             device,
             onnx_path=C["export"]["onnx_path"],
             providers=onnx_providers,
+            tolerance=verify_config.get("tolerance"),
+            output_path=verify_config.get("output_path"),
         )
 
     elif args.command == "latency":

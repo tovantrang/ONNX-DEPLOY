@@ -138,6 +138,9 @@ Compare PyTorch and ONNX Runtime outputs for numerical consistency:
 python train.py verify
 ```
 
+By default, this command also writes structured numerical-difference results to
+`outputs/verify_results.json`.
+
 Measure inference latency:
 
 ```bash
@@ -151,6 +154,8 @@ Example logs from a CPU run:
 ```text
 [INFO] ONNX Runtime providers used: ['CPUExecutionProvider']
 [INFO] Correctness max_abs_diff: 2.3841858e-07
+[INFO] Verification passed: True
+[INFO] Saved verify results to outputs/verify_results.json
 [INFO] Latency ONNX Runtime: 0.04 ms
 ```
 

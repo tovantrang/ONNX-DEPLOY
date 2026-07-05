@@ -8,3 +8,4 @@ __pycache__/
 # data and artifacts
 /data/
 artifacts/
+outputs/
