@@ -5,7 +5,7 @@ import onnxruntime as ort
 import pytest
 import torch
 
-from src.benchmark.latency import measure_latency
+from src.benchmark.latency import create_latency_input, measure_latency
 from src.export.onnx import export_onnx, verify_onnxruntime
 from src.models.tinycnn import TinyCNN
 from src.runtimes.runner import ONNXRunner, PyTorchRunner
@@ -92,7 +92,13 @@ def test_latency_returns_json_serializable_results(tmp_path):
 
     pytorch_runner = PyTorchRunner(model, "cpu")
     onnx_runner = ONNXRunner(onnx_path, providers=["CPUExecutionProvider"])
-    input_tensor = torch.zeros(1, 3, 32, 32)
+    input_tensor, input_metadata = create_latency_input(
+        {
+            "source": "synthetic",
+            "shape": [1, 3, 32, 32],
+            "fill": "zeros",
+        }
+    )
 
     results = measure_latency(
         pytorch_runner,
@@ -103,12 +109,18 @@ def test_latency_returns_json_serializable_results(tmp_path):
         warmup_runs=1,
         timed_runs=3,
         output_path=output_path,
+        input_metadata=input_metadata,
     )
 
     json.dumps(results)
     saved_results = json.loads(output_path.read_text())
 
     assert saved_results == results
+    assert results["input"] == {
+        "source": "synthetic",
+        "shape": [1, 3, 32, 32],
+        "fill": "zeros",
+    }
     assert results["input_shape"] == [1, 3, 32, 32]
     assert results["providers_used"] == ["CPUExecutionProvider"]
     assert results["onnx_path"] == str(onnx_path)
@@ -132,3 +144,17 @@ def test_latency_returns_json_serializable_results(tmp_path):
         ):
             assert isinstance(metrics[key], float)
             assert metrics[key] >= 0.0
+
+
+def test_latency_input_rejects_unsupported_source():
+    with pytest.raises(
+        ValueError,
+        match="Unsupported latency input source: dataloader_batch",
+    ):
+        create_latency_input(
+            {
+                "source": "dataloader_batch",
+                "shape": [1, 3, 32, 32],
+                "fill": "zeros",
+            }
+        )

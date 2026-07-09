@@ -9,6 +9,32 @@ import torch
 logger = logging.getLogger(__name__)
 
 
+def create_latency_input(input_config=None):
+    input_config = input_config or {}
+    source = input_config.get("source", "synthetic")
+    shape = input_config.get("shape", [1, 3, 32, 32])
+    fill = input_config.get("fill", "zeros")
+
+    if source != "synthetic":
+        raise ValueError(f"Unsupported latency input source: {source}")
+
+    if fill != "zeros":
+        raise ValueError(f"Unsupported latency input fill: {fill}")
+
+    input_shape = [int(dim) for dim in shape]
+    input_metadata = {
+        "source": source,
+        "shape": input_shape,
+        "fill": fill,
+    }
+
+    logger.info("Latency input source: %s", input_metadata["source"])
+    logger.info("Latency input shape: %s", input_metadata["shape"])
+    logger.info("Latency input fill: %s", input_metadata["fill"])
+
+    return torch.zeros(*input_shape), input_metadata
+
+
 def _synchronize_if_cuda(device):
     if str(device).startswith("cuda") and torch.cuda.is_available():
         torch.cuda.synchronize(device)
@@ -58,6 +84,7 @@ def measure_latency(
     warmup_runs=10,
     timed_runs=100,
     output_path=None,
+    input_metadata=None,
 ):
     logger.info("Running latency measurement")
     logger.info("Warmup runs: %s", warmup_runs)
@@ -86,6 +113,12 @@ def measure_latency(
     results = {
         "pytorch_eager": pytorch_stats,
         "onnxruntime": onnx_stats,
+        "input": input_metadata
+        or {
+            "source": "synthetic",
+            "shape": list(input_tensor.shape),
+            "fill": "unknown",
+        },
         "input_shape": list(input_tensor.shape),
         "providers_requested": list(onnx_runner.providers_requested),
         "providers_available": list(onnx_runner.providers_available),

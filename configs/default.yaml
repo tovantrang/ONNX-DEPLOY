@@ -31,3 +31,7 @@ latency:
     warmup_runs: 10
     timed_runs: 100
     output_path: outputs/latency_results.json
+    input:
+        source: synthetic
+        shape: [1, 3, 32, 32]
+        fill: zeros

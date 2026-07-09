@@ -152,6 +152,10 @@ By default, this command writes structured latency results to
 mean, median, p50, p95, p99, min, and max latency for both PyTorch eager and
 ONNX Runtime.
 
+The current latency command uses a configurable synthetic input by default.
+This isolates model/runtime inference from dataset loading and preprocessing.
+It is not an end-to-end data pipeline benchmark.
+
 ## Example output
 
 Example logs from a CPU run:
@@ -161,6 +165,9 @@ Example logs from a CPU run:
 [INFO] Correctness max_abs_diff: 2.3841858e-07
 [INFO] Verification passed: True
 [INFO] Saved verify results to outputs/verify_results.json
+[INFO] Latency input source: synthetic
+[INFO] Latency input shape: [1, 3, 32, 32]
+[INFO] Latency input fill: zeros
 [INFO] Running latency measurement
 [INFO] Warmup runs: 10
 [INFO] Timed runs: 100

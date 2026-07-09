@@ -5,7 +5,7 @@ import sys
 import torch
 import torch.nn as nn
 
-from src.benchmark.latency import measure_latency
+from src.benchmark.latency import create_latency_input, measure_latency
 from src.data.dataloader import generate_dataloaders
 from src.export.eager import load_model_eager, save_model_eager
 from src.export.onnx import export_onnx, export_sanity_forward, verify_onnxruntime
@@ -94,7 +94,7 @@ def main(args):
         load_model_eager(model_eager, path=C["export"]["pt_path"], device=device)
         eager_runner = PyTorchRunner(model_eager, device)
         onnx_runner = ONNXRunner(C["export"]["onnx_path"], providers=onnx_providers)
-        input_tensor = torch.zeros(1, 3, 32, 32)
+        input_tensor, input_metadata = create_latency_input(latency_config.get("input"))
 
         measure_latency(
             eager_runner,
@@ -105,6 +105,7 @@ def main(args):
             warmup_runs=latency_config.get("warmup_runs", 10),
             timed_runs=latency_config.get("timed_runs", 100),
             output_path=latency_config.get("output_path"),
+            input_metadata=input_metadata,
         )
 
 
