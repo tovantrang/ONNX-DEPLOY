@@ -98,6 +98,36 @@ Runtime provider information, input shape, dtype, device, and the ONNX path.
 These are correctness metrics for PyTorch vs ONNX Runtime output consistency,
 not model evaluation metrics on a dataset.
 
+### D007 — Persist latency results to JSON
+
+Decision: make `latency` return and persist structured inference timing
+results.
+
+The latency output contains separate PyTorch eager and ONNX Runtime metrics,
+warmup run count, timed run count, p50, p95, p99, min, max, mean, median, input
+shape, device, dtype, ONNX path, and provider information.
+
+This is separate from `verify`: latency measures inference timing, while
+verify measures numerical consistency. No absolute performance threshold is
+used because timing depends on hardware, runtime providers, and system load.
+
+### D008 — Latency uses synthetic input by default
+
+Decision: measure local runtime latency with a fixed synthetic input by default.
+
+The current `latency` command uses an input such as
+`torch.zeros(1, 3, 32, 32)`. This input choice is separate from the broader
+runtime-pure latency decision: the command measures model/runtime execution
+without dataset loading, while the synthetic tensor makes that measurement
+stable, fast, independent of CIFAR-10, and easier to test locally.
+
+Limit: this is not representative of a real end-to-end inference flow with
+data loading, transforms, or batches sampled from a dataset.
+
+Future option: add an explicit configuration such as
+`latency.input.source = synthetic`, then optionally support a prepared
+`dataloader_batch` or `real_batch` mode measured outside the data-loading timer.
+
 ## Roadmap
 
 ### MVP
@@ -134,11 +164,15 @@ small usability improvements for demos.
 - T010 — Minimal pyproject for tool configuration — Done
 - T011 — Initial pytest suite — Done
 - T012 — Persist verify results to JSON — Done
+- T013 — Structured latency results to JSON — Done
+- T014 — Make latency input source explicit — Planned
+- T015 — Harmonize verify and latency runners — Planned
 
 ## Known limitations
 
 - No API yet.
 - No Docker image yet.
 - Automated tests are still limited to foundation smoke tests.
-- Latency measurement still basic.
+- Latency measurement still basic and should not be interpreted as a universal
+  benchmark.
 - Active Python environment must include project dependencies.

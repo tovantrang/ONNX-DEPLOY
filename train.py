@@ -5,7 +5,7 @@ import sys
 import torch
 import torch.nn as nn
 
-from src.benchmark.latency import measure_runner_latency
+from src.benchmark.latency import measure_latency
 from src.data.dataloader import generate_dataloaders
 from src.export.eager import load_model_eager, save_model_eager
 from src.export.onnx import export_onnx, export_sanity_forward, verify_onnxruntime
@@ -49,6 +49,7 @@ def main(args):
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     onnx_providers = C.get("onnx", {}).get("providers")
     verify_config = C.get("verify", {})
+    latency_config = C.get("latency", {})
 
     if args.command == "train":
         train_dl, val_dl, test_dl = generate_dataloaders(C)
@@ -90,22 +91,20 @@ def main(args):
 
     elif args.command == "latency":
         model_eager = TinyCNN().to(device)
-        _, _, test_dl = generate_dataloaders(
-            C, batch_size=1
-        )  # use batch size 1 for latency measurement
         load_model_eager(model_eager, path=C["export"]["pt_path"], device=device)
         eager_runner = PyTorchRunner(model_eager, device)
         onnx_runner = ONNXRunner(C["export"]["onnx_path"], providers=onnx_providers)
+        input_tensor = torch.zeros(1, 3, 32, 32)
 
-        eager_stats = measure_runner_latency(eager_runner, test_dl, device)
-        onnx_stats = measure_runner_latency(onnx_runner, test_dl, device)
-        logger.info(
-            "Latency PyTorch eager: %.2f ms",
-            eager_stats["mean_latency_ms"],
-        )
-        logger.info(
-            "Latency ONNX Runtime: %.2f ms",
-            onnx_stats["mean_latency_ms"],
+        measure_latency(
+            eager_runner,
+            onnx_runner,
+            input_tensor,
+            device,
+            C["export"]["onnx_path"],
+            warmup_runs=latency_config.get("warmup_runs", 10),
+            timed_runs=latency_config.get("timed_runs", 100),
+            output_path=latency_config.get("output_path"),
         )
 
 

@@ -74,10 +74,14 @@ class ONNXRunner(Runner):
     def __init__(self, onnx_path, providers):
         import onnxruntime as ort
 
-        providers, _ = resolve_onnx_providers(providers)
-        self.session = ort.InferenceSession(onnx_path, providers=providers)
+        self.providers_requested = providers or ["CPUExecutionProvider"]
+        self.providers_used, self.providers_available = resolve_onnx_providers(
+            self.providers_requested
+        )
+        self.session = ort.InferenceSession(onnx_path, providers=self.providers_used)
         self.name = "onnxruntime"
-        logger.info("ONNX Runtime session providers: %s", self.session.get_providers())
+        self.session_providers = self.session.get_providers()
+        logger.info("ONNX Runtime session providers: %s", self.session_providers)
 
     def prepare(self, x):
         return x.cpu().numpy()

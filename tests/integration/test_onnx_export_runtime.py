@@ -5,8 +5,10 @@ import onnxruntime as ort
 import pytest
 import torch
 
+from src.benchmark.latency import measure_latency
 from src.export.onnx import export_onnx, verify_onnxruntime
 from src.models.tinycnn import TinyCNN
+from src.runtimes.runner import ONNXRunner, PyTorchRunner
 
 
 @pytest.mark.integration
@@ -77,3 +79,56 @@ def test_verify_onnxruntime_returns_json_serializable_results(tmp_path):
     assert results["passed"] is True
     assert results["max_abs_diff"] <= results["tolerance"]["max_abs_diff"]
     assert results["providers_used"] == ["CPUExecutionProvider"]
+
+
+@pytest.mark.integration
+def test_latency_returns_json_serializable_results(tmp_path):
+    model = TinyCNN()
+    model.eval()
+    onnx_path = tmp_path / "tinycnn.onnx"
+    output_path = tmp_path / "latency_results.json"
+
+    export_onnx(model, "cpu", out_path=onnx_path)
+
+    pytorch_runner = PyTorchRunner(model, "cpu")
+    onnx_runner = ONNXRunner(onnx_path, providers=["CPUExecutionProvider"])
+    input_tensor = torch.zeros(1, 3, 32, 32)
+
+    results = measure_latency(
+        pytorch_runner,
+        onnx_runner,
+        input_tensor,
+        "cpu",
+        onnx_path,
+        warmup_runs=1,
+        timed_runs=3,
+        output_path=output_path,
+    )
+
+    json.dumps(results)
+    saved_results = json.loads(output_path.read_text())
+
+    assert saved_results == results
+    assert results["input_shape"] == [1, 3, 32, 32]
+    assert results["providers_used"] == ["CPUExecutionProvider"]
+    assert results["onnx_path"] == str(onnx_path)
+    assert results["device"] == "cpu"
+    assert results["dtype"] == "torch.float32"
+
+    for runtime_name in ("pytorch_eager", "onnxruntime"):
+        metrics = results[runtime_name]
+        assert metrics["num_runs"] == 3
+        assert metrics["warmup_runs"] == 1
+        assert metrics["p95_ms"] >= metrics["p50_ms"]
+
+        for key in (
+            "mean_ms",
+            "median_ms",
+            "p50_ms",
+            "p95_ms",
+            "p99_ms",
+            "min_ms",
+            "max_ms",
+        ):
+            assert isinstance(metrics[key], float)
+            assert metrics[key] >= 0.0

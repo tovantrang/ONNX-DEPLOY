@@ -147,6 +147,11 @@ Measure inference latency:
 python train.py latency
 ```
 
+By default, this command writes structured latency results to
+`outputs/latency_results.json`. The report includes warmup runs, timed runs,
+mean, median, p50, p95, p99, min, and max latency for both PyTorch eager and
+ONNX Runtime.
+
 ## Example output
 
 Example logs from a CPU run:
@@ -156,7 +161,14 @@ Example logs from a CPU run:
 [INFO] Correctness max_abs_diff: 2.3841858e-07
 [INFO] Verification passed: True
 [INFO] Saved verify results to outputs/verify_results.json
-[INFO] Latency ONNX Runtime: 0.04 ms
+[INFO] Running latency measurement
+[INFO] Warmup runs: 10
+[INFO] Timed runs: 100
+[INFO] PyTorch eager latency p50: 0.15 ms
+[INFO] PyTorch eager latency p95: 0.20 ms
+[INFO] ONNX Runtime latency p50: 0.04 ms
+[INFO] ONNX Runtime latency p95: 0.06 ms
+[INFO] Saved latency results to outputs/latency_results.json
 ```
 
 Latency numbers depend heavily on hardware, installed runtimes, provider
@@ -181,10 +193,12 @@ measurement utility, not a rigorous benchmark suite.
   `onnxruntime-gpu`.
 - Standard Python logging is used for project messages around export,
   correctness checks, provider selection, and latency.
+- Latency results are persisted as JSON for local comparison, but are not
+  treated as universal performance thresholds.
 
 ## Roadmap
 
-- Persist evaluation metrics and latency outputs to JSON.
+- Persist evaluation metrics to JSON.
 - Add correctness checks on real data batches.
 - Add automated tests.
 - Add a local FastAPI inference API.
