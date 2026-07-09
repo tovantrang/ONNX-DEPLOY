@@ -169,6 +169,9 @@ def test_latency_returns_json_serializable_results(tmp_path):
         "shape": [1, 3, 32, 32],
         "fill": "zeros",
     }
+    assert results["measurement_scope"] == "runtime_only"
+    assert results["input_reuse"] == "same_prepared_input_repeated"
+    assert results["data_loading_included"] is False
     assert results["input_shape"] == [1, 3, 32, 32]
     assert results["providers_used"] == ["CPUExecutionProvider"]
     assert results["onnx_path"] == str(onnx_path)
@@ -197,12 +200,86 @@ def test_latency_returns_json_serializable_results(tmp_path):
 def test_latency_input_rejects_unsupported_source():
     with pytest.raises(
         ValueError,
-        match="Unsupported latency input source: dataloader_batch",
+        match="Unsupported latency input source: definitely_missing",
     ):
         create_latency_input(
             {
-                "source": "dataloader_batch",
+                "source": "definitely_missing",
                 "shape": [1, 3, 32, 32],
                 "fill": "zeros",
             }
         )
+
+
+def test_latency_input_rejects_data_loading_in_timed_scope():
+    with pytest.raises(
+        ValueError,
+        match="Latency input include_data_loading=true is not supported yet",
+    ):
+        create_latency_input(
+            {
+                "source": "dataset_batch",
+                "split": "test",
+                "batch_size": 1,
+                "include_data_loading": True,
+            },
+            config={"paths": {"data": "./data"}},
+        )
+
+
+def test_latency_can_measure_mocked_dataset_batch(tmp_path):
+    def fake_dataloader_factory(config, batch_size=None):
+        del config
+        batch_size = batch_size or 1
+        features = torch.zeros(batch_size, 3, 32, 32)
+        labels = torch.zeros(batch_size, dtype=torch.long)
+        dataloader = DataLoader(TensorDataset(features, labels), batch_size=batch_size)
+        return dataloader, dataloader, dataloader
+
+    model = TinyCNN()
+    model.eval()
+    onnx_path = tmp_path / "tinycnn.onnx"
+    output_path = tmp_path / "latency_results.json"
+
+    export_onnx(model, "cpu", out_path=onnx_path)
+
+    input_tensor, input_metadata = create_latency_input(
+        {
+            "source": "dataset_batch",
+            "split": "test",
+            "batch_size": 1,
+            "include_data_loading": False,
+        },
+        config={"paths": {"data": "./data"}},
+        dataloader_factory=fake_dataloader_factory,
+    )
+    pytorch_runner = PyTorchRunner(model, "cpu")
+    onnx_runner = ONNXRunner(onnx_path, providers=["CPUExecutionProvider"])
+
+    results = measure_latency(
+        pytorch_runner,
+        onnx_runner,
+        input_tensor,
+        "cpu",
+        onnx_path,
+        warmup_runs=1,
+        timed_runs=3,
+        output_path=output_path,
+        input_metadata=input_metadata,
+    )
+
+    saved_results = json.loads(output_path.read_text())
+    assert saved_results == results
+    assert results["measurement_scope"] == "runtime_only"
+    assert results["input_reuse"] == "same_prepared_input_repeated"
+    assert results["data_loading_included"] is False
+    assert results["input"] == {
+        "source": "dataset_batch",
+        "split": "test",
+        "batch_size": 1,
+        "shape": [1, 3, 32, 32],
+        "include_data_loading": False,
+    }
+    assert results["input_shape"] == [1, 3, 32, 32]
+    assert results["pytorch_eager"]["num_runs"] == 3
+    assert results["onnxruntime"]["num_runs"] == 3

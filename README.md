@@ -23,6 +23,7 @@ selection, numerical consistency checks, and reproducible latency measurements.
 - CPU-first setup.
 - Optional GPU requirements.
 - Standard Python logging.
+- Initial unit and integration tests.
 
 ## Architecture
 
@@ -174,6 +175,20 @@ The current latency command uses a configurable synthetic input by default.
 This isolates model/runtime inference from dataset loading and preprocessing.
 It is not an end-to-end data pipeline benchmark.
 
+A `dataset_batch` input mode can be enabled through configuration to measure
+runtime inference latency on a real prepared batch. Data loading and
+preprocessing are not included in the timed section. The current latency modes
+reuse the same prepared input across warmup and timed runs.
+
+```yaml
+latency:
+    input:
+        source: dataset_batch
+        split: test
+        batch_size: 1
+        include_data_loading: false
+```
+
 ## Example output
 
 Example logs from a CPU run:
@@ -225,7 +240,7 @@ measurement utility, not a rigorous benchmark suite.
 
 - Persist evaluation metrics to JSON.
 - Add correctness checks on real data batches.
-- Add automated tests.
+- Expand test coverage and add CLI smoke tests.
 - Add a local FastAPI inference API.
 - Add a CPU Docker image.
 - Add local MLflow experiment tracking.
@@ -237,6 +252,6 @@ measurement utility, not a rigorous benchmark suite.
 - Latency measurement is still basic.
 - No API yet.
 - No Docker image yet.
-- No automated tests yet.
+- Automated tests are still limited to foundational unit and integration checks.
+- ONNX export currently uses a static batch dimension.
 - GPU usage depends on local CUDA, PyTorch, and ONNX Runtime compatibility.
-- The export command still initializes dataloaders.

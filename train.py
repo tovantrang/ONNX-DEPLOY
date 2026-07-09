@@ -106,7 +106,11 @@ def main(args):
         load_model_eager(model_eager, path=C["export"]["pt_path"], device=device)
         eager_runner = PyTorchRunner(model_eager, device)
         onnx_runner = ONNXRunner(C["export"]["onnx_path"], providers=onnx_providers)
-        input_tensor, input_metadata = create_latency_input(latency_config.get("input"))
+        input_tensor, input_metadata = create_latency_input(
+            latency_config.get("input"),
+            config=C,
+            device=device,
+        )
 
         measure_latency(
             eager_runner,

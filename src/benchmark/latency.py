@@ -9,30 +9,82 @@ import torch
 logger = logging.getLogger(__name__)
 
 
-def create_latency_input(input_config=None):
+def create_latency_input(
+    input_config=None,
+    config=None,
+    device="cpu",
+    dataloader_factory=None,
+):
     input_config = input_config or {}
     source = input_config.get("source", "synthetic")
-    shape = input_config.get("shape", [1, 3, 32, 32])
-    fill = input_config.get("fill", "zeros")
 
-    if source != "synthetic":
-        raise ValueError(f"Unsupported latency input source: {source}")
+    if source == "synthetic":
+        shape = input_config.get("shape", [1, 3, 32, 32])
+        fill = input_config.get("fill", "zeros")
 
-    if fill != "zeros":
-        raise ValueError(f"Unsupported latency input fill: {fill}")
+        if fill != "zeros":
+            raise ValueError(f"Unsupported latency input fill: {fill}")
 
-    input_shape = [int(dim) for dim in shape]
-    input_metadata = {
-        "source": source,
-        "shape": input_shape,
-        "fill": fill,
-    }
+        input_shape = [int(dim) for dim in shape]
+        input_metadata = {
+            "source": source,
+            "shape": input_shape,
+            "fill": fill,
+        }
 
-    logger.info("Latency input source: %s", input_metadata["source"])
-    logger.info("Latency input shape: %s", input_metadata["shape"])
-    logger.info("Latency input fill: %s", input_metadata["fill"])
+        logger.info("Latency input source: %s", input_metadata["source"])
+        logger.info("Latency input shape: %s", input_metadata["shape"])
+        logger.info("Latency input fill: %s", input_metadata["fill"])
 
-    return torch.zeros(*input_shape), input_metadata
+        return torch.zeros(*input_shape, device=device), input_metadata
+
+    if source == "dataset_batch":
+        if config is None:
+            raise ValueError("Latency input source 'dataset_batch' requires config")
+
+        include_data_loading = bool(input_config.get("include_data_loading", False))
+        if include_data_loading:
+            raise ValueError(
+                "Latency input include_data_loading=true is not supported yet"
+            )
+
+        split = input_config.get("split", "test")
+        batch_size = int(input_config.get("batch_size", 1))
+
+        if dataloader_factory is None:
+            from src.data.dataloader import generate_dataloaders
+
+            dataloader_factory = generate_dataloaders
+
+        train_dl, val_dl, test_dl = dataloader_factory(config, batch_size=batch_size)
+        dataloaders = {
+            "train": train_dl,
+            "val": val_dl,
+            "test": test_dl,
+        }
+        if split not in dataloaders:
+            raise ValueError(f"Unsupported latency input split: {split}")
+
+        batch = next(iter(dataloaders[split]))
+        input_tensor = batch[0] if isinstance(batch, tuple | list) else batch
+        input_tensor = input_tensor.to(device)
+        input_metadata = {
+            "source": source,
+            "split": split,
+            "batch_size": batch_size,
+            "shape": list(input_tensor.shape),
+            "include_data_loading": False,
+        }
+
+        logger.info("Latency input source: %s", input_metadata["source"])
+        logger.info("Latency input split: %s", input_metadata["split"])
+        logger.info("Latency input batch size: %s", input_metadata["batch_size"])
+        logger.info("Latency input shape: %s", input_metadata["shape"])
+        logger.info("Latency measurement scope: runtime_only")
+
+        return input_tensor, input_metadata
+
+    raise ValueError(f"Unsupported latency input source: {source}")
 
 
 def _synchronize_if_cuda(device):
@@ -87,6 +139,9 @@ def measure_latency(
     input_metadata=None,
 ):
     logger.info("Running latency measurement")
+    logger.info("Latency measurement scope: runtime_only")
+    logger.info("Latency input reuse: same_prepared_input_repeated")
+    logger.info("Latency data loading included: False")
     logger.info("Warmup runs: %s", warmup_runs)
     logger.info("Timed runs: %s", timed_runs)
 
@@ -119,6 +174,9 @@ def measure_latency(
             "shape": list(input_tensor.shape),
             "fill": "unknown",
         },
+        "measurement_scope": "runtime_only",
+        "input_reuse": "same_prepared_input_repeated",
+        "data_loading_included": False,
         "input_shape": list(input_tensor.shape),
         "providers_requested": list(onnx_runner.providers_requested),
         "providers_available": list(onnx_runner.providers_available),

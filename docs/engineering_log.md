@@ -151,6 +151,21 @@ consistency question on real preprocessed samples when a local dataset-backed
 check is desired. This is still a runtime correctness check, not an evaluation
 metric for model quality.
 
+### D011 — Latency supports runtime-only dataset batch inputs
+
+Decision: keep synthetic latency input as the fast default and add an optional
+dataset-backed batch mode.
+
+The dataset batch mode prepares one batch before timing begins, then measures
+only PyTorch and ONNX Runtime inference. Data loading and preprocessing are not
+included in the timed section. Current latency modes reuse the same prepared
+input across warmup and timed runs. A future `dataset_stream` mode should use
+varied prepared inputs while still keeping data loading outside the timed
+section. End-to-end data pipeline latency remains a separate future extension.
+
+Limit: the current ONNX export uses a static batch dimension, so dataset-batch
+latency is intended to use `batch_size: 1` until dynamic batch export is added.
+
 ## Roadmap
 
 ### MVP
@@ -179,7 +194,7 @@ small usability improvements for demos.
 - T002 — Dependency split CPU/GPU — Done
 - T003 — Real evaluation metrics and JSON outputs — Planned
 - T004 — Correctness check on real batch — Done
-- T005 — Basic tests — Planned
+- T005 — Basic tests — Superseded by T011
 - T006 — FastAPI inference API — Later
 - T007 — Docker CPU image — Later
 - T008 — MLflow local tracking — Later
@@ -190,6 +205,10 @@ small usability improvements for demos.
 - T013 — Structured latency results to JSON — Done
 - T014 — Make latency input source explicit — Done
 - T015 — Harmonize verify and latency runners — Done
+- T016 — Add dataset-batch latency input mode — Done
+- T017 — Add local check script — Planned
+- T018 — Add CLI smoke tests — Planned
+- T019 — Add dynamic batch ONNX export — Planned
 
 ## Known limitations
 
@@ -198,4 +217,5 @@ small usability improvements for demos.
 - Automated tests are still limited to foundation smoke tests.
 - Latency measurement still basic and should not be interpreted as a universal
   benchmark.
+- ONNX export currently uses a static batch dimension.
 - Active Python environment must include project dependencies.
