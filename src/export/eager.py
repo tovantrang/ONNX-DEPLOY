@@ -17,7 +17,7 @@ def load_model_eager(model, path="./artifacts/tinycnn_cifar10.pt", device="cpu")
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"Model file not found: {path.resolve()}")
-    state_dict = torch.load(path, map_location=device)
+    state_dict = torch.load(path, map_location=device, weights_only=True)
     model.load_state_dict(state_dict)
     model.to(device)
     model.eval()
