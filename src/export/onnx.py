@@ -10,6 +10,76 @@ from src.runtimes.runner import ONNXRunner, PyTorchRunner
 logger = logging.getLogger(__name__)
 
 
+def create_verify_input(
+    input_config=None,
+    config=None,
+    device="cpu",
+    dataloader_factory=None,
+):
+    input_config = input_config or {}
+    source = input_config.get("source", "synthetic")
+
+    if source == "synthetic":
+        shape = input_config.get("shape", [1, 3, 32, 32])
+        fill = input_config.get("fill", "zeros")
+
+        if fill != "zeros":
+            raise ValueError(f"Unsupported verify input fill: {fill}")
+
+        input_shape = [int(dim) for dim in shape]
+        input_metadata = {
+            "source": source,
+            "shape": input_shape,
+            "fill": fill,
+        }
+
+        logger.info("Verify input source: %s", input_metadata["source"])
+        logger.info("Verify input shape: %s", input_metadata["shape"])
+        logger.info("Verify input fill: %s", input_metadata["fill"])
+
+        return torch.zeros(*input_shape, device=device), input_metadata
+
+    if source == "dataset_batch":
+        if config is None:
+            raise ValueError("Verify input source 'dataset_batch' requires config")
+
+        split = input_config.get("split", "test")
+        batch_size = int(input_config.get("batch_size", 1))
+
+        if dataloader_factory is None:
+            from src.data.dataloader import generate_dataloaders
+
+            dataloader_factory = generate_dataloaders
+
+        train_dl, val_dl, test_dl = dataloader_factory(config, batch_size=batch_size)
+        dataloaders = {
+            "train": train_dl,
+            "val": val_dl,
+            "test": test_dl,
+        }
+        if split not in dataloaders:
+            raise ValueError(f"Unsupported verify input split: {split}")
+
+        batch = next(iter(dataloaders[split]))
+        input_tensor = batch[0] if isinstance(batch, tuple | list) else batch
+        input_tensor = input_tensor.to(device)
+        input_metadata = {
+            "source": source,
+            "split": split,
+            "batch_size": batch_size,
+            "shape": list(input_tensor.shape),
+        }
+
+        logger.info("Verify input source: %s", input_metadata["source"])
+        logger.info("Verify input split: %s", input_metadata["split"])
+        logger.info("Verify input batch size: %s", input_metadata["batch_size"])
+        logger.info("Verify input shape: %s", input_metadata["shape"])
+
+        return input_tensor, input_metadata
+
+    raise ValueError(f"Unsupported verify input source: {source}")
+
+
 def export_sanity_forward(model, device):
     model.eval()
     x = torch.zeros(1, 3, 32, 32, device=device)
@@ -55,6 +125,7 @@ def verify_onnxruntime(
     tolerance=None,
     output_path=None,
     input_tensor=None,
+    input_metadata=None,
 ):
     """
     Minimal ONNXRuntime check: PyTorch logits vs ONNXRuntime logits on the same input.
@@ -72,6 +143,11 @@ def verify_onnxruntime(
         if input_tensor is not None
         else torch.zeros(1, 3, 32, 32, device=device)
     )
+    input_metadata = input_metadata or {
+        "source": "synthetic",
+        "shape": list(x.shape),
+        "fill": "zeros",
+    }
 
     pytorch_runner = PyTorchRunner(model, device)
     onnx_runner = ONNXRunner(onnx_path, providers=providers_requested)
@@ -109,6 +185,7 @@ def verify_onnxruntime(
         "onnx_path": str(onnx_path),
         "device": str(device),
         "dtype": str(x.dtype),
+        "input": input_metadata,
         "input_shape": list(x.shape),
     }
 

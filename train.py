@@ -8,7 +8,12 @@ import torch.nn as nn
 from src.benchmark.latency import create_latency_input, measure_latency
 from src.data.dataloader import generate_dataloaders
 from src.export.eager import load_model_eager, save_model_eager
-from src.export.onnx import export_onnx, export_sanity_forward, verify_onnxruntime
+from src.export.onnx import (
+    create_verify_input,
+    export_onnx,
+    export_sanity_forward,
+    verify_onnxruntime,
+)
 from src.models.tinycnn import TinyCNN
 from src.runtimes.runner import ONNXRunner, PyTorchRunner
 from src.training.training_loop import evaluate, train
@@ -79,6 +84,11 @@ def main(args):
     elif args.command == "verify":
         model_eager = TinyCNN().to(device)
         load_model_eager(model_eager, path=C["export"]["pt_path"], device=device)
+        input_tensor, input_metadata = create_verify_input(
+            verify_config.get("input"),
+            config=C,
+            device=device,
+        )
 
         verify_onnxruntime(
             model_eager,
@@ -87,6 +97,8 @@ def main(args):
             providers=onnx_providers,
             tolerance=verify_config.get("tolerance"),
             output_path=verify_config.get("output_path"),
+            input_tensor=input_tensor,
+            input_metadata=input_metadata,
         )
 
     elif args.command == "latency":

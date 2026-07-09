@@ -26,6 +26,10 @@ verify:
     tolerance:
         max_abs_diff: 1.0e-4
     output_path: outputs/verify_results.json
+    input:
+        source: synthetic
+        shape: [1, 3, 32, 32]
+        fill: zeros
 
 latency:
     warmup_runs: 10

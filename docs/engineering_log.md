@@ -140,6 +140,17 @@ the existing `verify` and `latency` JSON outputs. `verify` remains responsible
 for numerical comparison and tolerance checks; the runners only encapsulate
 runtime execution.
 
+### D010 — Verify supports synthetic and dataset batch inputs
+
+Decision: keep synthetic verify input as the fast default and add an optional
+dataset-backed batch mode.
+
+The synthetic mode remains stable, local, and suitable for quick checks and
+tests. The dataset batch mode checks the same PyTorch vs ONNX Runtime numerical
+consistency question on real preprocessed samples when a local dataset-backed
+check is desired. This is still a runtime correctness check, not an evaluation
+metric for model quality.
+
 ## Roadmap
 
 ### MVP
@@ -167,7 +178,7 @@ small usability improvements for demos.
 - T001 — Configurable ONNX Runtime providers — Done
 - T002 — Dependency split CPU/GPU — Done
 - T003 — Real evaluation metrics and JSON outputs — Planned
-- T004 — Correctness check on real batch — Planned
+- T004 — Correctness check on real batch — Done
 - T005 — Basic tests — Planned
 - T006 — FastAPI inference API — Later
 - T007 — Docker CPU image — Later

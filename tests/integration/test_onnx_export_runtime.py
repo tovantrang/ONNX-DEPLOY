@@ -4,9 +4,10 @@ import numpy as np
 import onnxruntime as ort
 import pytest
 import torch
+from torch.utils.data import DataLoader, TensorDataset
 
 from src.benchmark.latency import create_latency_input, measure_latency
-from src.export.onnx import export_onnx, verify_onnxruntime
+from src.export.onnx import create_verify_input, export_onnx, verify_onnxruntime
 from src.models.tinycnn import TinyCNN
 from src.runtimes.runner import ONNXRunner, PyTorchRunner
 
@@ -50,7 +51,12 @@ def test_verify_onnxruntime_returns_json_serializable_results(tmp_path):
         providers=["CPUExecutionProvider"],
         tolerance={"max_abs_diff": 1.0e-4},
         output_path=output_path,
-        input_tensor=torch.randn(1, 3, 32, 32),
+        input_tensor=torch.zeros(1, 3, 32, 32),
+        input_metadata={
+            "source": "synthetic",
+            "shape": [1, 3, 32, 32],
+            "fill": "zeros",
+        },
     )
 
     json.dumps(results)
@@ -69,16 +75,58 @@ def test_verify_onnxruntime_returns_json_serializable_results(tmp_path):
         "onnx_path",
         "device",
         "dtype",
+        "input",
         "input_shape",
     }
     assert expected_keys.issubset(results)
     assert saved_results == results
+    assert results["input"] == {
+        "source": "synthetic",
+        "shape": [1, 3, 32, 32],
+        "fill": "zeros",
+    }
     assert isinstance(results["passed"], bool)
     assert isinstance(results["max_abs_diff"], float)
     assert isinstance(results["mean_abs_diff"], float)
     assert results["passed"] is True
     assert results["max_abs_diff"] <= results["tolerance"]["max_abs_diff"]
     assert results["providers_used"] == ["CPUExecutionProvider"]
+
+
+def test_verify_input_rejects_unsupported_source():
+    with pytest.raises(
+        ValueError,
+        match="Unsupported verify input source: definitely_missing",
+    ):
+        create_verify_input({"source": "definitely_missing"})
+
+
+def test_verify_input_can_use_mocked_dataset_batch():
+    def fake_dataloader_factory(config, batch_size=None):
+        del config
+        batch_size = batch_size or 1
+        features = torch.zeros(batch_size, 3, 32, 32)
+        labels = torch.zeros(batch_size, dtype=torch.long)
+        dataloader = DataLoader(TensorDataset(features, labels), batch_size=batch_size)
+        return dataloader, dataloader, dataloader
+
+    input_tensor, input_metadata = create_verify_input(
+        {
+            "source": "dataset_batch",
+            "split": "test",
+            "batch_size": 2,
+        },
+        config={"paths": {"data": "./data"}},
+        dataloader_factory=fake_dataloader_factory,
+    )
+
+    assert list(input_tensor.shape) == [2, 3, 32, 32]
+    assert input_metadata == {
+        "source": "dataset_batch",
+        "split": "test",
+        "batch_size": 2,
+        "shape": [2, 3, 32, 32],
+    }
 
 
 @pytest.mark.integration

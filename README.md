@@ -141,6 +141,24 @@ python train.py verify
 By default, this command also writes structured numerical-difference results to
 `outputs/verify_results.json`.
 
+By default, `verify` uses a synthetic input for a fast runtime correctness
+check. A dataset batch mode can be enabled through configuration when a local
+dataset-backed check is desired. This checks numerical consistency between
+PyTorch and ONNX Runtime; it does not measure model quality.
+
+Example dataset-backed verify input:
+
+```yaml
+verify:
+    input:
+        source: dataset_batch
+        split: test
+        batch_size: 1
+```
+
+This mode uses the existing CIFAR-10 dataloader setup and may download CIFAR-10
+if it is not already available in the configured data directory.
+
 Measure inference latency:
 
 ```bash
