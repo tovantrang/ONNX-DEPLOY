@@ -3,10 +3,9 @@ import logging
 from pathlib import Path
 
 import numpy as np
-import onnxruntime as ort
 import torch
 
-from src.runtimes.runner import resolve_onnx_providers
+from src.runtimes.runner import ONNXRunner, PyTorchRunner
 
 logger = logging.getLogger(__name__)
 
@@ -74,14 +73,10 @@ def verify_onnxruntime(
         else torch.zeros(1, 3, 32, 32, device=device)
     )
 
-    with torch.no_grad():
-        pt_logits = model(x).cpu().numpy()
-
-    providers_used, providers_available = resolve_onnx_providers(providers_requested)
-    sess = ort.InferenceSession(onnx_path, providers=providers_used)
-    session_providers = sess.get_providers()
-    logger.info("ONNX Runtime session providers: %s", session_providers)
-    ort_out = sess.run(["logits"], {"input": x.cpu().numpy()})[0]
+    pytorch_runner = PyTorchRunner(model, device)
+    onnx_runner = ONNXRunner(onnx_path, providers=providers_requested)
+    pt_logits = pytorch_runner.run(pytorch_runner.prepare(x))
+    ort_out = onnx_runner.run(onnx_runner.prepare(x))
 
     abs_diff = np.abs(pt_logits - ort_out)
     max_abs_diff = float(np.max(abs_diff))
@@ -108,9 +103,9 @@ def verify_onnxruntime(
         },
         "pytorch_output_shape": list(pt_logits.shape),
         "onnx_output_shape": list(ort_out.shape),
-        "providers_requested": list(providers_requested),
-        "providers_available": list(providers_available),
-        "providers_used": list(session_providers),
+        "providers_requested": list(onnx_runner.providers_requested),
+        "providers_available": list(onnx_runner.providers_available),
+        "providers_used": list(onnx_runner.session_providers),
         "onnx_path": str(onnx_path),
         "device": str(device),
         "dtype": str(x.dtype),

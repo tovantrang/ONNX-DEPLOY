@@ -130,6 +130,16 @@ data loading, transforms, or batches sampled from a dataset.
 Future option: support a prepared `dataloader_batch` or `real_batch` mode
 measured outside the data-loading timer.
 
+### D009 — Shared runners for verify and latency
+
+Decision: use `PyTorchRunner` and `ONNXRunner` for both correctness
+verification and latency measurement.
+
+This reduces duplicated ONNX Runtime provider/session handling while preserving
+the existing `verify` and `latency` JSON outputs. `verify` remains responsible
+for numerical comparison and tolerance checks; the runners only encapsulate
+runtime execution.
+
 ## Roadmap
 
 ### MVP
@@ -168,7 +178,7 @@ small usability improvements for demos.
 - T012 — Persist verify results to JSON — Done
 - T013 — Structured latency results to JSON — Done
 - T014 — Make latency input source explicit — Done
-- T015 — Harmonize verify and latency runners — Planned
+- T015 — Harmonize verify and latency runners — Done
 
 ## Known limitations
 
