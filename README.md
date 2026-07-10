@@ -246,6 +246,11 @@ project does not yet produce a combined candidate-level report or automatic
 ranking. The target schema for that future report is documented in
 `docs/deployment_report_schema.md`.
 
+A deployment report represents one benchmark run: candidates are comparable
+only when they share the same model, input protocol, measurement scope, and
+hardware context. Varying the input protocol is useful, but belongs to input
+sensitivity analysis rather than deployment candidate comparison.
+
 ## Project structure
 
 - `src/`: Python package with model, data loading, export, runtime, latency,

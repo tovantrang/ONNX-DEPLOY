@@ -191,6 +191,18 @@ candidate runtimes, correctness, latency, and simple recommendations should fit
 together. Existing `verify` and `latency` JSON files remain the intermediate
 building blocks.
 
+### D014 — Deployment comparisons require a shared input protocol
+
+Decision: compare deployment candidates only inside a shared `benchmark_run`.
+
+Deployment candidates are comparable when they use the same model, checkpoint,
+input protocol, measurement scope, and hardware/environment context. Input
+protocol variation is useful, but it is treated as input sensitivity analysis,
+not deployment candidate comparison.
+
+The deployment report schema is therefore structured around one
+`benchmark_run`, with multiple candidates compared inside that shared context.
+
 ## Roadmap
 
 ### MVP
@@ -235,7 +247,7 @@ quality evaluation, richer latency reports, and demo usability improvements.
 - T018 — Add CLI smoke tests — Planned
 - T019 — Add dynamic batch ONNX export — Planned
 - T020 — Define deployment report schema — Done
-- T021 — Combine verify and latency into candidate report — Planned
+- T021 — Build deployment report from verify and latency results — Done
 - T022 — Add deployment configuration matrix — Planned
 - T023 — Add ranking rules for promising configurations — Planned
 
