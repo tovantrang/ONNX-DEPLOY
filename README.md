@@ -2,38 +2,52 @@
 
 ## Overview
 
-ONNX-DEPLOY is a local ML/CV inference deployment pipeline. It trains a small
-PyTorch image classification model currently on CIFAR-10, exports it to ONNX, validates ONNX Runtime
-outputs against PyTorch, and measures inference latency.
+ONNX-DEPLOY is a local inference deployment benchmarking project. It takes a
+PyTorch model, exports it to ONNX, compares PyTorch eager and ONNX Runtime
+execution, verifies numerical correctness, measures runtime latency, and writes
+structured JSON reports.
+
+The current TinyCNN/CIFAR-10 setup is a benchmark support: it provides a small,
+local model and representative inputs for testing deployment workflows. The
+main focus is deployment comparison, not maximizing model accuracy.
 
 ## Why this project
 
-The goal is to understand the engineering path from a trained model to an
-inference artifact: PyTorch training, checkpointing, ONNX export, runtime
-selection, numerical consistency checks, and reproducible latency measurements.
+The goal is to answer a practical deployment question:
+
+```text
+Given a model, representative inputs, and local hardware constraints,
+which deployment configuration looks most promising?
+```
+
+The project compares deployment candidates through correctness, latency,
+latency stability, provider availability, portability, and implementation
+complexity. It is a local ML engineering project, not a production serving
+platform or a complete MLOps system.
 
 ## Current features
 
-- PyTorch training entry point.
+- PyTorch checkpoint/export path.
 - ONNX export.
-- ONNX Runtime inference.
-- PyTorch vs ONNX Runtime correctness check.
-- Basic latency measurement.
 - Configurable ONNX Runtime providers.
+- PyTorch vs ONNX Runtime correctness check.
+- Runtime latency measurement.
+- Synthetic and dataset batch input modes.
+- Structured JSON outputs.
 - CPU-first setup.
 - Optional GPU requirements.
 - Standard Python logging.
-- Initial unit and integration tests.
+- Unit and integration tests.
 
 ## Architecture
 
 ```text
-PyTorch model
-    -> training checkpoint
-    -> ONNX export
-    -> ONNX Runtime session
+PyTorch model + input source
+    -> export candidate: ONNX
+    -> runtime candidates: PyTorch eager / ONNX Runtime
     -> correctness check
     -> latency measurement
+    -> structured JSON results
 ```
 
 ## Installation
@@ -121,11 +135,14 @@ time.
 
 ## Usage
 
-Train the TinyCNN model and save a PyTorch checkpoint:
+Train the TinyCNN demo model and save a PyTorch checkpoint:
 
 ```bash
 python train.py train
 ```
+
+This command exists to produce a local checkpoint for benchmarking. Training is
+not the main contribution of the project.
 
 Export the saved checkpoint to ONNX:
 
@@ -215,6 +232,20 @@ Latency numbers depend heavily on hardware, installed runtimes, provider
 selection, and current system load. The current latency command is a basic
 measurement utility, not a rigorous benchmark suite.
 
+## Results
+
+Current commands write structured local reports:
+
+- `outputs/verify_results.json`: numerical consistency between PyTorch eager
+  and ONNX Runtime.
+- `outputs/latency_results.json`: runtime latency metrics and input/runtime
+  metadata.
+
+These reports are the first step toward comparing deployment candidates. The
+project does not yet produce a combined candidate-level report or automatic
+ranking. The target schema for that future report is documented in
+`docs/deployment_report_schema.md`.
+
 ## Project structure
 
 - `src/`: Python package with model, data loading, export, runtime, latency,
@@ -238,20 +269,30 @@ measurement utility, not a rigorous benchmark suite.
 
 ## Roadmap
 
-- Persist evaluation metrics to JSON.
-- Add correctness checks on real data batches.
-- Expand test coverage and add CLI smoke tests.
+- Add a local check script.
+- Generate a deployment report from verify and latency outputs.
+- Combine verify and latency into a candidate-level report.
+- Add dynamic batch ONNX export.
+- Add a deployment configuration matrix.
+- Add ranking rules for promising configurations.
 - Add a local FastAPI inference API.
 - Add a CPU Docker image.
-- Add local MLflow experiment tracking.
+- Add optional local MLflow tracking.
 - Add optional GitHub Actions checks.
+- Add optional model quality evaluation with accuracy/loss JSON.
 
 ## Limitations
 
 - Not production-ready.
-- Latency measurement is still basic.
+- Benchmark results are local and hardware-dependent.
+- TinyCNN/CIFAR-10 is a benchmark support, not the core objective.
+- No full deployment configuration matrix yet.
+- No combined candidate-level report yet.
+- No automatic ranking/recommendation yet.
 - No API yet.
 - No Docker image yet.
+- No MLflow tracking yet.
+- No model quality evaluation yet.
 - Automated tests are still limited to foundational unit and integration checks.
 - ONNX export currently uses a static batch dimension.
 - GPU usage depends on local CUDA, PyTorch, and ONNX Runtime compatibility.

@@ -2,13 +2,15 @@
 
 ## Current objective
 
-Transform the current ONNX inference prototype into a reproducible local ML/CV
-pipeline suitable for a professional portfolio.
+Transform the current ONNX inference prototype into a reproducible local
+inference deployment benchmarking project suitable for a professional
+portfolio.
 
-The project should cover model training, evaluation, ONNX export, runtime
-comparison between PyTorch and ONNX Runtime, latency measurement, a local
-inference API, Docker packaging, automated tests, and a professional README.
-The scope should remain local, free, standard, and easy to explain.
+The project should help compare local deployment candidates through ONNX export,
+runtime correctness checks, latency measurement, provider availability, and
+structured reports. The TinyCNN/CIFAR-10 setup is a benchmark support, not the
+main objective. The scope should remain local, free, standard, and easy to
+explain.
 
 ## Decisions
 
@@ -166,33 +168,56 @@ section. End-to-end data pipeline latency remains a separate future extension.
 Limit: the current ONNX export uses a static batch dimension, so dataset-batch
 latency is intended to use `batch_size: 1` until dynamic batch export is added.
 
+### D012 — Project scope is inference deployment benchmarking
+
+Decision: position the project as local inference deployment benchmarking.
+
+The project is centered on comparing deployment configurations for a given
+model and representative inputs. `verify` and `latency` are the first building
+blocks: they check numerical correctness, measure runtime latency, and produce
+structured outputs. Model quality evaluation with accuracy/loss is useful, but
+secondary to deployment comparison.
+
+Future direction: combine correctness and latency into candidate-level reports,
+then add deployment matrices and ranking rules for promising configurations.
+
+### D013 — Deployment report schema first
+
+Decision: document a target deployment report schema before implementing a full
+configuration matrix.
+
+The schema defines how model metadata, input metadata, local environment,
+candidate runtimes, correctness, latency, and simple recommendations should fit
+together. Existing `verify` and `latency` JSON files remain the intermediate
+building blocks.
+
 ## Roadmap
 
 ### MVP
 
-Keep the existing train, export, verify, and latency commands working on
-CPU with clear configuration and documentation.
+Keep the existing train, export, verify, and latency commands working on CPU
+with clear configuration, runtime metadata, and JSON outputs.
 
 ### Clean version
 
-Add structured metrics, JSON outputs, correctness checks on real batches, and a
-small automated test suite.
+Add a local check script, a deployment report schema, and candidate-level
+reports combining correctness and latency.
 
 ### Portfolio version
 
-Add a local FastAPI inference API, a CPU Docker image, a polished README, and
-lightweight local experiment tracking.
+Add dynamic batch ONNX export, deployment configuration matrices, ranking rules,
+a local FastAPI demo, and a CPU Docker image.
 
 ### Optional extensions
 
-Add GitHub Actions, optional GPU documentation, richer latency reports, and
-small usability improvements for demos.
+Add GitHub Actions, optional GPU documentation, local MLflow tracking, model
+quality evaluation, richer latency reports, and demo usability improvements.
 
 ## Tickets
 
 - T001 — Configurable ONNX Runtime providers — Done
 - T002 — Dependency split CPU/GPU — Done
-- T003 — Real evaluation metrics and JSON outputs — Planned
+- T003 — Optional model evaluation metrics — Later
 - T004 — Correctness check on real batch — Done
 - T005 — Basic tests — Superseded by T011
 - T006 — FastAPI inference API — Later
@@ -209,11 +234,17 @@ small usability improvements for demos.
 - T017 — Add local check script — Planned
 - T018 — Add CLI smoke tests — Planned
 - T019 — Add dynamic batch ONNX export — Planned
+- T020 — Define deployment report schema — Done
+- T021 — Combine verify and latency into candidate report — Planned
+- T022 — Add deployment configuration matrix — Planned
+- T023 — Add ranking rules for promising configurations — Planned
 
 ## Known limitations
 
 - No API yet.
 - No Docker image yet.
+- No deployment configuration matrix yet.
+- No combined candidate-level report yet.
 - Automated tests are still limited to foundation smoke tests.
 - Latency measurement still basic and should not be interpreted as a universal
   benchmark.
